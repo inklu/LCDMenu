@@ -1,0 +1,16 @@
+{
+  "name": "LCDMenu",
+  "keywords": "menu, lcd, oop",
+  "description": "The LCDMenu abstract class for using menu on LCD in Arduino sketches.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/..."
+  },
+  "version": "1.0.0",
+  "authors": {
+    "name": "Igor Klyushnyov",
+    "url": "https://github.com/..."
+  },
+  "frameworks": "arduino",
+  "platforms": "*"
+}
