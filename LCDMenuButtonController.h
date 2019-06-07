@@ -8,18 +8,18 @@
 #endif
 
 #include "LCDMenuController.h"
-#include "SmartButton.h"
+#include "DigitalButton.h"
 
 //Объявление класса Кнопочный Контроллер для управления Меню
 class ButtonController:public Controller {
     //enum buttonRole {brUP,brDOWN,brOK,brBACK,brNONE=999};
     typedef actionType buttonRole;
     struct bc {
-      SmartButton *bt; //адрес на объект Кнопка
+      DigitalButton *bt; //адрес на объект Кнопка
       buttonRole  br;  //роль кнопки
     } btns[4];         //таких 4 штуки
     byte btns_cnt=0;
-    void add(SmartButton &bt, buttonRole br){ //добавить кнопку в кнопочный контроллер
+    void add(DigitalButton &bt, buttonRole br){ //добавить кнопку в кнопочный контроллер
       if(btns_cnt<4){
         btns[btns_cnt].bt = &bt;
         btns[btns_cnt++].br = br;
@@ -27,16 +27,16 @@ class ButtonController:public Controller {
     }
   public:
     ButtonController() {}; 
-    void addUP(SmartButton &bt){ //добавить кнопку ВВЕРХ
+    void addUP(DigitalButton &bt){ //добавить кнопку ВВЕРХ
       add(bt,aUP);
     }
-    void addDOWN(SmartButton &bt){ //добавить кнопку ВНИЗ
+    void addDOWN(DigitalButton &bt){ //добавить кнопку ВНИЗ
       add(bt,aDOWN);
     }
-    void addOK(SmartButton &bt){ //добавить кнопку ОК
+    void addOK(DigitalButton &bt){ //добавить кнопку ОК
       add(bt,aOK);
     }
-    void addBACK(SmartButton &bt){ //добавить кнопку НАЗАД
+    void addBACK(DigitalButton &bt){ //добавить кнопку НАЗАД
       add(bt,aBACK);
     }
     void run(unsigned long mls=0){ //обравботка событий от всех добавленных кнопок
