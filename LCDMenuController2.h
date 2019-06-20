@@ -75,7 +75,7 @@ class MenuJoystickController:public MenuController,public Joystick{
                        const uint16_t &_sig_low=JSTK_LOW_SIG,
                        const uint16_t &_sig_high_ts=JSTK_HIGH_TRESHOLD,
                        const uint16_t &_sig_low_ts=JSTK_LOW_TRESHOLD);
-    //void run(unsigned long _mls=0);
+    void run(unsigned long _mls=0){ MenuController::run(_mls); }
   protected:
     void offClick(const jsPos jsp);
     void onHold(const jsPos jsp);

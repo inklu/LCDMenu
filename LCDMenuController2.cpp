@@ -16,7 +16,7 @@ void MenuController::run(unsigned long _mls=0){
     cycle += MC_CYCLE_MLS;
   }
 
-  menu->run(mls);
+  if(menu!=nullptr) menu->run(mls);
 }
 
 void MenuController::menuAction(const mcPos _mcp, const mcEvent _mce){
