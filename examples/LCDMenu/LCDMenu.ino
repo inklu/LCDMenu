@@ -1,5 +1,5 @@
 #include <AnalogButton.h>
-#include <SmartButton.h>
+#include <DigitalButton.h>
 
 #include <LCDMenuController.h>
 #include <LCDMenuButtonController.h>
