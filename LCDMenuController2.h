@@ -35,7 +35,7 @@
 #include <DTime.h>
 #include <LiquidCrystal.h>
 
-//Добавление 0 для времени и даты
+//adding 0 to hours,minutes,seconds,days & month
 String decimate(byte b); //{ return ((b < 10) ? "0" : "") + String(b); }
 
 ////Abstract controller class for menu
@@ -171,118 +171,118 @@ class MenuEncoderController:public MenuController,public RotEnc{
 ////Menu class
 class MenuController::Menu {
   public:
-    //Тип указатель на функцию void
+    //Type of pointer to void function for calling from menu
     typedef void (*pFunc)();
-    //Типы строк: Узел, Целочисленный, с плавающей запятой, список, время, дата, строка, IP, ...
+    //Menu line types: node, integer, float, list, time, date, string, IP, void function...
     enum menuLineType {mtNONE, mtNode, mtInt, mtFloat, mtList, mtTime, mtDate, mtString, mtIP, mtURL, mtFunc};
-    //конструктор по умолчанию
+    //default constructor
     Menu(){ }
-    //Объявление класса "строка меню"
+    //class declaration of menu line
     class MenuLine {
         menuLineType mlType=mtNONE;
       public:
-        class MenuNode; //узел
-        class MenuLeaf; //лист
-        String name;    //отображаемое имя узла
-        MenuLine *pPreviousLine=nullptr; //предыдущая строка меню
-        MenuLine *pNextLine=nullptr;     //следующая строка меню
-        MenuLine *pParentLine=nullptr;	 //родительская строка меню
-        inline virtual bool isNode(){ return mlType == mtNode; }; //это узел?
-        inline virtual bool isFunc(){ return mlType == mtFunc; }; //это функция?
+        class MenuNode; //node
+        class MenuLeaf; //leaf
+        String name;    //display name of line
+        MenuLine *pPreviousLine=nullptr; //previous menu line
+        MenuLine *pNextLine=nullptr;     //next menu line
+        MenuLine *pParentLine=nullptr;	 //parent menu line
+        inline virtual bool isNode(){ return mlType == mtNode; }; //is it node?
+        inline virtual bool isFunc(){ return mlType == mtFunc; }; //is it function?
         //virtual void edit();
-        virtual String getValue(){};     //возвращает строковое значение узла
+        virtual String getValue(){};     //returns the string value of the leaf
     };
-    //Объявление класса "Узел"
+    //Menu node class declaration 
     class MenuLine::MenuNode: public MenuLine {
       public:
-        MenuLine *pFirstChild=nullptr; //первый дочерний узел
+        MenuLine *pFirstChild=nullptr; //the first child line
         MenuNode() { mlType = mtNode; };
     };
-    //Объявление класса "Лист"
+    //Menu Leaf class declaration
     class MenuLine::MenuLeaf: public MenuLine {
       protected:
-	byte *parts, partsCnt=0, part=0;  //смещения на элементы значения листа
+	byte *parts, partsCnt=0, part=0;  //shifts of the value parts
       public:
-        class MenuLeaf_int;			//Объявление листа типа целочисленный
-        class MenuLeaf_list;		//Объявление листа типа список
-        class MenuLeaf_time;		//Объявление листа типа время
-        class MenuLeaf_date;		//Объявление листа типа дата
-        class MenuLeaf_func;			//Объявление листа типа функция
-        class MenuLeaf_str;			//Объявление листа типа строка
+        class MenuLeaf_int;		//Integer value leaf class declaration
+        class MenuLeaf_list;		//List value leaf class declaration
+        class MenuLeaf_time;		//Time value leaf class declaration
+        class MenuLeaf_date;		//Date value leaf class declaration
+        class MenuLeaf_func;		//Function value leaf class declaration
+        class MenuLeaf_str;		//String value leaf class declaration
         virtual String getValue(){}
         //virtual setValue(String _s) { }
-        virtual void editVal(){} //редактировать значение
-        virtual void saveVal(){} //сохранить отредактированное значение
-        virtual void nextVal(){}   //Следующее значение текущего элемента листа
-        virtual void prevVal(){}   //Предыдущее значение текущего элемента листа
-	virtual void nextPart(){ if(partsCnt) if(++part==partsCnt) part=0; }  //Установка следующего элемента значеня
-	virtual int getShift(){ return (partsCnt ? parts[part] : 0); } //Получить смещение текущего элемента значения
+        virtual void editVal(){} //edit value
+        virtual void saveVal(){} //save editing value
+        virtual void nextVal(){}   //next value of the current part of leaf value
+        virtual void prevVal(){}   //previous value of the current part of leaf value
+	virtual void nextPart(){ if(partsCnt) if(++part==partsCnt) part=0; }  //shift to next part of editing value
+	virtual int getShift(){ return (partsCnt ? parts[part] : 0); } //get the current shift of the leaf value part
     };
-    //Объявление класса "Лист" целочисленного значения
+    //Integer value of leaf class definition
     class MenuLine::MenuLeaf::MenuLeaf_int: public MenuLine::MenuLeaf {
-        int value,     //текущее значение
-            editValue, //редактируемое значение
-            minVal,    //минимальное значение
-            maxVal,    //максимальное значение
-            step;      //шаг изменения
+        int value,     //current value
+            editValue, //editing value
+            minVal,    //minimum value
+            maxVal,    //maximum value
+            step;      //change step
         //void edit();
       public:
         MenuLeaf_int(int _val=0, int _minVal=-32768, int _maxVal=32767, int _step=1) { mlType = mtInt; value = _val; minVal = _minVal; maxVal = _maxVal; step = _step; };
         String getValue() { //String s; s = value; return s; 
 			return (String) editValue; }
-        MenuLeaf_int operator=(int _val){ value = _val; return *this; } //задать значение
-        void setValue(int _val=0, int _minVal=-32768, int _maxVal=32767, int _step=1){ value = _val; minVal = _minVal; maxVal = _maxVal; step = _step; } //задать значение
+        MenuLeaf_int operator=(int _val){ value = _val; return *this; } //set the value
+        void setValue(int _val=0, int _minVal=-32768, int _maxVal=32767, int _step=1){ value = _val; minVal = _minVal; maxVal = _maxVal; step = _step; } //set the value
         void nextVal(){ if((editValue+step)<=maxVal) editValue+=step; }
         void prevVal(){ if((editValue-step)>=minVal) editValue-=step; }
         void editVal(){ editValue = value; }
         void saveVal(){ value = editValue; }
     };
-    //Объявление класса "Лист" типа список
+    //List value of leaf class definition
     class MenuLine::MenuLeaf::MenuLeaf_list: public MenuLine::MenuLeaf {
-        String *values=nullptr; //массив значений
-        byte idx=0,             //текущее значение
-             editIdx=0;         //редактируемое значение
-        byte size;				//размер массива значений
+        String *values=nullptr; //values array
+        byte idx=0,             //index of current value
+             editIdx=0;         //index of editing value
+        byte size;		//array size
       public:
         MenuLeaf_list(){};
         String getValue() { return values[editIdx];}
-        void setValue(String _vals[], byte _size); //задать массив значений
+        void setValue(String _vals[], byte _size); //set the array of values
         void nextVal(){++editIdx==size?editIdx=0:editIdx;}
         void prevVal(){editIdx==0?editIdx=size-1:editIdx--;}
         void editVal(){ editIdx = idx; }
         void saveVal(){ idx = editIdx; }
     };
-    //Объявление класса "Лист" типа время (DTime)
+    //Time value of leaf class definition (DTime)
     class MenuLine::MenuLeaf::MenuLeaf_time: public MenuLine::MenuLeaf {
-        DTime *time,    //текущее значение
-              editTime; //редактируемое значение
-        String format = "HH:MM";
+        DTime *time,    //current value
+              editTime; //editing value
+        String format = "HH:MM"; //format of time
         void nextVal(DTime &_tm);
         void prevVal(DTime &_tm);
         String getValue(DTime &_tm);
       public:
         MenuLeaf_time(){ partsCnt = 2; parts = new byte [partsCnt]; parts[0]=0; parts[1]=3;}// parts[2]=6;}
         String getValue(){ return getValue(editTime); }// { return decimate(time->hour) + ":" + decimate(time->minute) + ":" + decimate(time->second); }
-        void setValue(DTime *_tm){ time = _tm;} //задать значение через ссылку на глобальную переменную
-        void setValue(byte _h,byte _m,byte _s){ if(time) delete time; time = new DTime; time->setTime(_h,_m,_s);} //задать новое значение
+        void setValue(DTime *_tm){ time = _tm;} //set the time through the pointer of the global variable 
+        void setValue(byte _h,byte _m,byte _s){ if(time) delete time; time = new DTime; time->setTime(_h,_m,_s);} //set new value
         void nextVal(){ nextVal(editTime); }
         void prevVal(){ prevVal(editTime); }
         void editVal(){ editTime.setTime(time->hour,time->minute,0); }
         void saveVal(){ time->setTime(editTime.hour,editTime.minute,0); }
     };
-	//Объявление класса "Лист" типа дата (DTime)
+	//Date value of leaf class definition (DTime)
     class MenuLine::MenuLeaf::MenuLeaf_date: public MenuLine::MenuLeaf {
-        DTime *date, //текущее значение
-              editDate; //редактируемое значение
-        String format = "YYYY-MM-DD";
+        DTime *date, //current value
+              editDate; //editing value
+        String format = "YYYY-MM-DD"; //format of date
         void nextVal(DTime &_dt);
         void prevVal(DTime &_dt);
         String getValue(DTime &_dt);
       public:
         MenuLeaf_date(){ partsCnt = 3; parts = new byte [partsCnt]; parts[0]=0; parts[1]=5; parts[2]=8;}
         String getValue(){ return getValue(editDate); }// { return (String) date->year + "-" + decimate(date->month) + "-" + decimate(date->day); }
-        void setValue(DTime *_dt){ date = _dt;} //задать значение через ссылку на глобальную переменную
-        void setValue(uint16_t _y,uint8_t _m,uint8_t _d){ if(date) delete date; date = new DTime; date->setDate(_y,_m,_d);} //задать новое значение
+        void setValue(DTime *_dt){ date = _dt;} //set the date through the pointer of the global variable 
+        void setValue(uint16_t _y,uint8_t _m,uint8_t _d){ if(date) delete date; date = new DTime; date->setDate(_y,_m,_d);} //set new date
         void nextVal(){ nextVal(editDate); }
         void prevVal(){ prevVal(editDate); }
         void editVal(){ editDate.setDate(date->year,date->month,date->day); }
@@ -299,47 +299,48 @@ class MenuController::Menu {
     ////events receiver from controller
     void onAction(const mcPos _mcp,const mcEvent _mce,const MenuController &_mc);
 
-    ////вывод меню на дисплей
-    virtual void show(); //вывести на дисплей меню в режиме навигации по меню
-    virtual void edit(); //вывести на дисплей элемент в режиме редактирования
-    virtual void enable(); //активировать меню и вывести на дисплей
-    virtual void disable();//деактивировать меню и очистить дисплей
-    bool isActive(){ return activeMenu;}; //меню активно?
+    ////display menu on lcd
+    virtual void show(); //display menu in navigation mode
+    virtual void edit(); //display menu in editor mode
+    virtual void enable(); //activate menu & display 
+    virtual void disable();//disable menu & clear display
+    bool isActive(){ return activeMenu;}; //is menu active?
 
+    //default lcd resolution is 16x2
     const LiquidCrystal& newDisplay(const byte rsPin, const byte enPin, const byte d4Pin, const byte d5Pin, const byte d6Pin, const byte d7Pin, const byte _cols=16,const byte _rows=2);
 
-    void run(unsigned long _mls=0);//независимая от контроллера активность: вывод сообщений, выход по таймауту
+    void run(unsigned long _mls=0);//controller independed menu activity: message display, disable menu by timeout
 
   protected:
-    MenuLine *pFirstLine; //адрес первой строки меню
-    MenuLine *pActiveLine;//адрес активной строки меню
+    MenuLine *pFirstLine; //pointer to the first menu line
+    MenuLine *pActiveLine;//pointer to the active menu line
 
-    MenuLine* newMenuLine(menuLineType mlt); //создание строки меню указанного типа
+    MenuLine* newMenuLine(menuLineType mlt); //new menu line of defined type
 
-    ////создание структуры меню
-    virtual void create(){}; //создать меню, переопределяется в дочернем классе, смотри пример
+    ////create menu structure - from json file in perspective 
+    virtual void create(){}; //create menu structure, is overloaded in derived class, see example
 
   private:
-    unsigned long mls;     //время millis()
+    unsigned long mls;     //time - millis()
     unsigned long mlsInactionStart;
-    bool activeMenu=false; //индикатор активности меню
-    bool editMode=false; //режим редактирования\навигации
+    bool activeMenu=false; //menu activity indicator
+    bool editMode=false; //menu editing mode
 
-    byte lcd_last_row;   //последняя строка дисплея
-    byte lcd_last_col;   //последняя колонка дисплея
-    byte lcd_active_row=0;//активная строка дисплея
-    LiquidCrystal *lcd=nullptr;//адрес дисплея
+    byte lcd_last_row;   //lcd last line
+    byte lcd_last_col;   //lcd last column
+    byte lcd_active_row=0;//lcd active line
+    LiquidCrystal *lcd=nullptr;//pointer to lcd
 
-    ////для внутренних манипуляций
-    void moveUP();   //переместиться вверх по меню
-    void moveDOWN(); //переместиться вниз по меню
-    void moveIN();   //войти внутрь узла
-    void moveOUT();  //выйти из узла
-    void execFunc(); //выполнить функцию
+    ////internal manipulations
+    void moveUP();   //menu up
+    void moveDOWN(); //menu down
+    void moveIN();   //into node
+    void moveOUT();  //out of node
+    void execFunc(); //call void function
 
-    void prevVal();  //следующее значение элемента редактируемой строки
-    void nextVal();  //предыдущее значение элемента редактируемой строки
-    void nextPart(); //переключиться на следующий элемент редактируемой строки
+    void prevVal();  //previous value of the editing part of leaf value
+    void nextVal();  //next value of the editing part of leaf value
+    void nextPart(); //switch to next part of the editing leaf value
 };
 
 
