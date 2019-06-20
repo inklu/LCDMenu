@@ -1,7 +1,6 @@
 #include "LCDMenuController2.h"
 
-//Добавление 0 для времени и даты
-//String decimate(byte b) { return ((b < 10) ? "0" : "") + String(b); }
+String decimate(byte b) { return ((b < 10) ? "0" : "") + String(b); }
 
 ////Menu controller
 void MenuController::run(unsigned long _mls=0){ 
@@ -28,12 +27,12 @@ Serial.println(_mce);
   switch(menu->isActive()){
     case false: 
       if(_mcp == mcpOK && _mce == mceHold) {
-        cycle = mls + MC_CYCLE_MLS * 3; //пауза перед отправкой событий контроллера в меню
-        menu->enable(); //при длительном нажатии OK активируем меню
+        cycle = mls + MC_CYCLE_MLS * 3; //postpone of sending the controller event to menu handler
+        menu->enable(); //enable menu by hold OK button
       }
       break;
     case true:
-      menu->onAction(_mcp,_mce,*this); //отправляем действие на обработку только в случае активности меню
+      menu->onAction(_mcp,_mce,*this); //send the action for processing in case of active menu only
       break;
   }
 }
@@ -214,7 +213,7 @@ void MenuEncoderController::onHold(){
 
 ////Menu
 void MenuController::Menu::onAction(const mcPos _mcp, const mcEvent _mce, const MenuController &_mc){
-  mlsInactionStart = mls;//сбрасываем счётчик таймаута
+  mlsInactionStart = mls;//reset the timout counter
   switch(_mc.mcType){
     case mccButtons:
     case mccJoystick:
@@ -229,33 +228,33 @@ void MenuController::Menu::onAction(const mcPos _mcp, const mcEvent _mce, const 
           else prevVal();
         break;
         case mcpOK:
-          if(_mce==mceClick){ //короткое нажатие
+          if(_mce==mceClick){ //short button press
             if(!editMode) {
-              if(pActiveLine->isNode()) moveIN(); //входим внутрь узла
-              else if(pActiveLine->isFunc()) execFunc();  //выполняем функцию
+              if(pActiveLine->isNode()) moveIN(); //get in node
+              else if(pActiveLine->isFunc()) execFunc();  //call function
               else {
-                ((MenuLine::MenuLeaf *)pActiveLine)->editVal(); //копирование значения для редактирования
-                edit(); //вызываем на редактирование лист
+                ((MenuLine::MenuLeaf *)pActiveLine)->editVal(); //copy the leaf value for editing
+                edit(); //call the editor
               }
             }
-	    else nextPart(); //переходим к следующему элементу значения при редактировании
+	    else nextPart(); //switch to next part of editing value
           }
-          else if(_mce==mceHold){ //длительное нажатие
-            if(!editMode) moveOUT(); //выход на вышестоящий уровень меню при просмотре
-            else show(); //переход в режим просмотра меню
+          else if(_mce==mceHold){ //hold button
+            if(!editMode) moveOUT(); //get out of node when navigating
+            else show(); //switch to menu navigation
           }
         break;
         case mcpBACK:
-          if(!editMode) moveOUT(); //выход на вышестоящий уровень иерархии при просмотре
+          if(!editMode) moveOUT(); //get out of node when navigating
           else {
-            ((MenuLine::MenuLeaf *)pActiveLine)->saveVal(); //сохранение значения после редактирования
-            show(); //переход в режим просмотра иерархии
+            ((MenuLine::MenuLeaf *)pActiveLine)->saveVal(); //save edited value
+            show(); //switch to menu navigation
           }
         break;
       }
       break;
     case mccRotaryEncoder:
-      //do peculiar action, there is no BACK command
+      //do peculiar actions, there is no BACK command
       switch(_mcp){
         case mcpUP:
           if(!editMode) moveUP();
@@ -266,22 +265,22 @@ void MenuController::Menu::onAction(const mcPos _mcp, const mcEvent _mce, const 
           else prevVal();
         break;
         case mcpOK:
-          if(_mce==mceClick){ //короткое нажатие
+          if(_mce==mceClick){ //short button press
             if(!editMode) {
-              if(pActiveLine->isNode()) moveIN(); //входим внутрь узла
-              else if(pActiveLine->isFunc()) execFunc();  //выполняем функцию
+              if(pActiveLine->isNode()) moveIN(); //get in node
+              else if(pActiveLine->isFunc()) execFunc();  //call function
               else {
-                ((MenuLine::MenuLeaf *)pActiveLine)->editVal(); //копирование значения для редактирования
-                edit(); //вызываем на редактирование лист
+                ((MenuLine::MenuLeaf *)pActiveLine)->editVal(); //copy the leaf value for editing
+                edit(); //call the editor
               }
             }
-	    else nextPart(); //переходим к следующему элементу значения при редактировании
+	    else nextPart(); //switch to next part of editing value
           }
-          else if(_mce==mceHold){ //длительное нажатие
-            if(!editMode) moveOUT(); //выход на вышестоящий уровень меню при просмотре
+          else if(_mce==mceHold){ //hold button
+            if(!editMode) moveOUT(); //get out of node when navigating
             else {
-              ((MenuLine::MenuLeaf *)pActiveLine)->saveVal(); //сохранение значения после редактирования
-              show(); //переход в режим просмотра меню
+              ((MenuLine::MenuLeaf *)pActiveLine)->saveVal(); //save edited value
+              show(); //switch to menu navigation
             }
           }
         break;
@@ -290,7 +289,6 @@ void MenuController::Menu::onAction(const mcPos _mcp, const mcEvent _mce, const 
   }
 }
 
-//Установка значений списка через массив
 void MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_list::setValue(String _vals[],byte _size){
   size = _size;
   if (values) { delete[] values; }
@@ -300,7 +298,6 @@ void MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_list::setValue(String _v
   }
 }
 
-//Следующее значение одного из компонентов времени при редактировании
 void MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_time::nextVal(DTime &_tm){
   byte h = _tm.hour;
   byte m = _tm.minute;
@@ -319,7 +316,6 @@ void MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_time::nextVal(DTime &_tm
   _tm.setTime(h,m,s);
 }
 
-//Предыдущее значение одного из компонентов времени при редактировании
 void MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_time::prevVal(DTime &_tm){
   byte h = _tm.hour;
   byte m = _tm.minute;
@@ -346,7 +342,6 @@ String MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_time::getValue(DTime &
   return stm;
 }
 
-//Следующее значение одного из компонентов даты при редактировании
 void MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_date::nextVal(DTime &_dt){
   uint16_t y = _dt.year;
   uint8_t m = _dt.month;
@@ -365,7 +360,6 @@ void MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_date::nextVal(DTime &_dt
   _dt.setDate(y,m,d);
 }
 
-//Предыдущее значение одного из компонентов даты при редактировании
 void MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_date::prevVal(DTime &_dt){
   uint16_t y = _dt.year;
   uint8_t m = _dt.month;
@@ -393,7 +387,6 @@ String MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_date::getValue(DTime &
   return sdt;
 }
 
-//Добавить строку в меню заданного типа
 MenuController::Menu::MenuLine* MenuController::Menu::newMenuLine(menuLineType mlt){
   MenuLine *ml;
   switch(mlt){
@@ -419,7 +412,6 @@ MenuController::Menu::MenuLine* MenuController::Menu::newMenuLine(menuLineType m
   return ml;
 }
 
-////создать дисплей
 const LiquidCrystal& MenuController::Menu::newDisplay(const byte rsPin, const byte enPin, const byte d4Pin, const byte d5Pin, const byte d6Pin, const byte d7Pin, const byte _cols=16,const byte _rows=2){
 
   lcd_last_col = _cols-1;
@@ -428,17 +420,16 @@ const LiquidCrystal& MenuController::Menu::newDisplay(const byte rsPin, const by
   if(lcd) delete lcd;
   lcd = new LiquidCrystal(rsPin,enPin,d4Pin,d5Pin,d6Pin,d7Pin);
   lcd->begin(_cols,_rows);
-  return *lcd;//можно будет использовать для других целей
+  return *lcd;//lcd may be used for other purposes
 }
 
-////отрисовать меню в режиме просмотра
 void MenuController::Menu::show(){
   MenuController::Menu::MenuLine *pLine;
 
   editMode = false;
   lcd->noCursor();
 
-  //подгон меню под размеры экрана
+  //adjust menu to lcd size
   if(!lcd_active_row && pActiveLine->pNextLine==nullptr && pActiveLine->pPreviousLine!=nullptr){
     lcd_active_row++;
   }
@@ -448,7 +439,7 @@ void MenuController::Menu::show(){
   
   byte row_up = lcd_active_row, row_down = lcd_active_row;
 
-  //вывод активной строки меню
+  //active menu line display
   lcd->clear();
   lcd->setCursor(0,lcd_active_row);
   lcd->print(LCD_ACTIVE_LINE);
@@ -457,7 +448,7 @@ void MenuController::Menu::show(){
     lcd->print(LCD_ELLIPSIS);
   }
 
-  //вывод строк перед активной строкой (выше)
+  //display menu lines above active line
   pLine = pActiveLine;
   while(row_up-- && (pLine=pLine->pPreviousLine,pLine!=nullptr)){
     lcd->setCursor(1,row_up);
@@ -467,7 +458,7 @@ void MenuController::Menu::show(){
     }
   }
 
-  //вывод строк после активной строкой (ниже)
+  //display menu lines below active line
   pLine = pActiveLine;
   while(row_down++ < lcd_last_row && (pLine=pLine->pNextLine,pLine!=nullptr)){
     lcd->setCursor(1,row_down);
@@ -478,39 +469,35 @@ void MenuController::Menu::show(){
   }
 }
 
-////отрисовать меню в режиме редактирования
 void MenuController::Menu::edit() {
   editMode = true;
 
   lcd->clear();
 
-  //название элемента
+  //line name
   lcd->setCursor(0,0);
   lcd->print(pActiveLine->name);
 
   lcd->setCursor(0,1);
   lcd->print(LCD_ACTIVE_LINE);
 
-  //значение элемента с курсором на редактируемом элементе
+  //value with the cursor on the editing part
   lcd->print(pActiveLine->getValue());
   lcd->setCursor(((MenuController::Menu::MenuLine::MenuLeaf *) pActiveLine)->getShift() + 1,1);
   lcd->cursor();
 }
 
-//активировать меню и отобразить в режиме просмотра
 void MenuController::Menu::enable() {
   activeMenu = true;
   mlsInactionStart = mls;
   show();
 }	
 
-//деактивировать меню и очистить дисплей
 void MenuController::Menu::disable() {
   activeMenu = false;
   lcd->clear();
 }	
 
-//Перемещаемся вверх по иерархии
 void MenuController::Menu::moveUP(){
   if(pActiveLine->pPreviousLine!=nullptr){
     pActiveLine = pActiveLine->pPreviousLine;
@@ -520,7 +507,7 @@ void MenuController::Menu::moveUP(){
     show();
   }
 }
-//Перемещаемся вниз по иерархии
+
 void MenuController::Menu::moveDOWN(){
   if(pActiveLine->pNextLine!=nullptr){
     pActiveLine = pActiveLine->pNextLine;
@@ -530,7 +517,7 @@ void MenuController::Menu::moveDOWN(){
     show();
   }
 }
-//Перемещаемся внутрь узла
+
 void MenuController::Menu::moveIN(){
   MenuLine::MenuNode *pNode;
   if(pActiveLine->isNode()){
@@ -540,33 +527,29 @@ void MenuController::Menu::moveIN(){
     show();
   }
 }
-//Перемещаемся наружу из узла
+
 void MenuController::Menu::moveOUT(){
   if(pActiveLine->pParentLine!=nullptr){
     pActiveLine = pActiveLine->pParentLine;
     show();
   }
-  else disable(); //деактивация меню при нахождении в основном меню
+  else disable(); //disable menu when back from root
 }
 
-//выполнить функцию void
 void MenuController::Menu::execFunc(){
   ((MenuLine::MenuLeaf::MenuLeaf_func*)pActiveLine)->func();
 }
 
-//Выбор предыдущего значения при редактировании
 void MenuController::Menu::prevVal(){
   ((MenuLine::MenuLeaf *) pActiveLine)->prevVal();
   edit();
 }
 
-//Выбор следующего значения при редактировании
 void MenuController::Menu::nextVal(){
   ((MenuLine::MenuLeaf *) pActiveLine)->nextVal(); 
   edit();
 }
 
-//Выбор следующего элемента значения при редактировании
 void MenuController::Menu::nextPart(){
   ((MenuLine::MenuLeaf *) pActiveLine)->nextPart(); 
   edit();
@@ -576,9 +559,9 @@ void MenuController::Menu::run(unsigned long _mls=0) {
   if(!_mls) mls = millis();
   else mls = _mls;
 
-  //здесь добавить вывод сообщения
+  //add here the message display
 
-  //изменение состояния меню активно\неактивно 
+  //disable menu by inactivity timeout
   if (isActive() && ((mls - mlsInactionStart) > MC_INACT_TIMEOUT)) disable();
 }
 
