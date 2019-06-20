@@ -12,7 +12,7 @@
 #endif
 
 #ifndef MC_CYCLE_MLS
-#define MC_CYCLE_MLS (1000)
+#define MC_CYCLE_MLS (500)
 #endif
 
 #ifndef MC_INACT_TIMEOUT
