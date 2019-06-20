@@ -188,7 +188,7 @@ MenuEncoderController::MenuEncoderController(const byte _clkPin, const byte _dtP
 }
 
 void MenuEncoderController::runEachMls(unsigned long _mls){ 
-  DigitalButton::run(_mls); 
+  RotEnc::run(_mls); 
 }
 
 void MenuEncoderController::runEachCycle(unsigned long _mls){ 

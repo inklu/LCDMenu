@@ -153,6 +153,7 @@ class MenuButtonController::MenuAnalogButton:public AnalogButton,public MenuButt
 class MenuEncoderController:public MenuController,public RotEnc{
   public:
     MenuEncoderController(const byte _clkPin, const byte _dtPin, const byte _swPin);
+    void run(unsigned long _mls=0){ MenuController::run(_mls); }
   protected:
     void onClockwise();
     void onCounterclockwise();
