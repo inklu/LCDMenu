@@ -1,86 +1,87 @@
 #include "LCDMenuController2.h"
 #include <DTime.h>
 
-//наследуем класс Menu, чтобы переопределить метод create
+//derive class to overload create method 
 class MyMenu:public MenuController::Menu {
   public:
     MyMenu(){ create(); }
     void create();
 };
 
-//выполняемую функцию добавляем в меню
+//declare calling function from menu
 void f1();
 
-//переменная времени и даты для часов
+//global date&time for clock
 DTime dtime(2019,05,27,10,20,30);
 uint64_t cycle;
 
-//создаём меню
+//create menu
 void MyMenu::create() {
-  MenuLine::MenuLeaf::MenuLeaf_int *mli;   //целое значение
-  MenuLine::MenuLeaf::MenuLeaf_list *mlst; //список
-  MenuLine::MenuLeaf::MenuLeaf_time *mlt;  //время
-  MenuLine::MenuLeaf::MenuLeaf_date *mld;  //дата
-  MenuLine::MenuLeaf::MenuLeaf_func *mlf;  //функция
-  MenuLine::MenuNode *mn;
+  MenuLine::MenuLeaf::MenuLeaf_int *mli;   //integer value
+  MenuLine::MenuLeaf::MenuLeaf_list *mlst; //list
+  MenuLine::MenuLeaf::MenuLeaf_time *mlt;  //time
+  MenuLine::MenuLeaf::MenuLeaf_date *mld;  //date
+  MenuLine::MenuLeaf::MenuLeaf_func *mlf;  //function
+  MenuLine::MenuNode *mn; //node
   
-  pFirstLine = mli = newMenuLine(mtInt); //создаём первую строку меню с целым значением
-  mli->name = "Integer1";                //имя строки
+  pFirstLine = mli = newMenuLine(mtInt); //first line is an integer value leaf 
+  mli->name = "Integer1";                //line name
   //mli->value = 10;            
-  *mli = 10;               //значение, шаг=1
+  *mli = 10;               //set value, step=1
 
-  mn = newMenuLine(mtNode);              //создаём узел
-  mn->name = "Node1";            //имя узла
-  pFirstLine->pNextLine = mn;      //идёт следом за первой строкой меню
-  mn->pPreviousLine = pFirstLine;    //предшественник - первая строка
+  mn = newMenuLine(mtNode);              //create node
+  mn->name = "Node1";            //node name
+  pFirstLine->pNextLine = mn;      //node follows first line
+  mn->pPreviousLine = pFirstLine;    //predecessor is first line
 
-  mlst = newMenuLine(mtList);         //создаём строку список
-  mlst->name = "List2";             //имя строки
-  String lst[]={"Hello","World","I love you!"}; //значения строки
-  mlst->setValue(lst,3);            //установка значений
-  mn->pNextLine = mlst;             //следует за узлом
-  mlst->pPreviousLine = mn;           //предшественник - узел
+  mlst = newMenuLine(mtList);         //create leaf of list value
+  mlst->name = "List2";             //leaf name
+  String lst[]={"Hello","World","I love you!"}; //values of leaf
+  mlst->setValue(lst,3);            //set values
+  mn->pNextLine = mlst;             //follows node
+  mlst->pPreviousLine = mn;           //predecessor is node
   
-  mli = newMenuLine(mtInt);       //создаём строку меню с целым значением
-  mli->name = "Integer3";       //имя строки
+  mli = newMenuLine(mtInt);       //create another integer value leaf
+  mli->name = "Integer3";       //leaf name
   //mli->value = 30;
-  *mli = 30;              //значение
+  *mli = 30;              //value
   //mli->step = 3;
-  //mli->setStep(3);            //шаг
-  mn->pNextLine->pNextLine = mli;   //следует за списком
-  mli->pPreviousLine = mn->pNextLine; //предшественник - список
+  //mli->setStep(3);            //step
+  mn->pNextLine->pNextLine = mli;   //follows the list
+  mli->pPreviousLine = mn->pNextLine; //predecessor is list
 
-  mlt = newMenuLine(mtTime);  //создаём первую строку меню со временем
-  mlt->name = "Time";     //имя строки
-  mlt->setValue(&dtime);    //значение - ссылка на часы (глобальная переменная) 
-  mn->pFirstChild = mlt;    //первая строка узла Node1
-  mlt->pParentLine = mn;    //родитель - узел Node1
+  mlt = newMenuLine(mtTime);  //create leaf of time
+  mlt->name = "Time";     //leaf name
+  mlt->setValue(&dtime);    //set value as a pointer to global variable
+  mn->pFirstChild = mlt;    //the first line of the node
+  mlt->pParentLine = mn;    //parent is node
   
-  mld = newMenuLine(mtDate);      //создаём строку меню с датой
-  mld->name = "Date";         //имя строки
-  mld->setValue(&dtime);        //значение - ссылка на дату (глобальная переменная)
-  mld->pParentLine = mn;        //родитель - узел Node1
-  mn->pFirstChild->pNextLine = mld;   //следует за строкой Time
-  mld->pPreviousLine = mn->pFirstChild; //предшественник - строка Time
+  mld = newMenuLine(mtDate);      //create leaf of date
+  mld->name = "Date";         //leaf name
+  mld->setValue(&dtime);        //set value as a pointer to global variable
+  mld->pParentLine = mn;        //parent is node
+  mn->pFirstChild->pNextLine = mld;   //follows the time line
+  mld->pPreviousLine = mn->pFirstChild; //predecessor - time line
 
-  mlf = newMenuLine(mtFunc);      //создаём строку меню с функцией
-  mlf->name = "Func1";         //имя строки
-  mlf->setValue(f1);        //значение - ссылка на дату (глобальная переменная)
-  mlf->pParentLine = mn;        //родитель - узел Node1
-  mld->pNextLine = mlf;   //следует за строкой Date
-  mlf->pPreviousLine = mld; //предшественник - строка Date
+  mlf = newMenuLine(mtFunc);      //create leaf with function
+  mlf->name = "Func1";         //leaf name
+  mlf->setValue(f1);        //value as a ponter to function
+  mlf->pParentLine = mn;        //parent is node
+  mld->pNextLine = mlf;   //follows the date leaf
+  mlf->pPreviousLine = mld; //predecessor is the date leaf
 
-  pActiveLine = pFirstLine;  //активная строка - первая строка
+  pActiveLine = pFirstLine; //active line is the first line
 }
 
-MyMenu m;
-byte xPin=A1,yPin=A0,swPin=8;
-MenuJoystickController mjc(xPin,yPin,swPin);
+MyMenu m; //define menu object
+byte xPin=A1,yPin=A0,swPin=8; //Joystick parms
+MenuJoystickController mjc(xPin,yPin,swPin); //define joystick object
 
 //LCD parms
 const int rs = 12, en = 11, d4 = 5, d5 = 4, d6 = 3, d7 = 2;
-const LiquidCrystal &lcd = m.newDisplay(rs,en,d4,d5,d6,d7,16,2);
+const LiquidCrystal &lcd = m.newDisplay(rs,en,d4,d5,d6,d7,16,2); //create lcd for menu
 
+//define void function 
 void f1(){
   lcd.clear();
   lcd.setCursor(0,0);
@@ -94,8 +95,8 @@ void setup() {
   Serial.begin(9600);
   Serial.println("Start");
 
-  mjc.bindMenu(m);
-  //mjc.setTopPos(xPin,LOW);
+  mjc.bindMenu(m);// bind menu to controller
+  mjc.setTopPos(xPin,LOW); //set Joystick Top position
 
   cycle = (uint64_t)millis() + 1000;
 
@@ -103,15 +104,15 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-  mjc.run(); //длительное нажатие на OK автивирует меню, длительное нажатие на BACK деактивирует меню
+  mjc.run(); //holding OK enables menu, holding Back disables
   
-  //if (!m.isActive()) { lcd... } //если меню не активно, то можно использовать lcd для других целей
+  //if (!m.isActive()) { lcd... } //if menu is disabled the lcd can be used for other purposes
 
   if ((uint64_t)millis() >= cycle) {
     cycle += 1000;
-    dtime.tick(); //+1сек к часам
-  //вывод времени и даты, когда меню не активно
-  if (!m.isActive()){
+    dtime.tick(); //+1sec to clock
+//display date&time when menu is disabled 
+    if (!m.isActive()){
       lcd.clear();
       lcd.noCursor();
       lcd.setCursor(0,0);
