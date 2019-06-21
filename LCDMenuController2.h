@@ -27,10 +27,10 @@
 #define LCD_ACTIVE_LINE ">"
 #endif
 
-#include "Joystick.h"
-#include "DigitalButton.h"
-#include "AnalogButton.h"
-#include "RotEnc.h"
+#include <AnalogJoystick.h>
+#include <DigitalButton.h>
+#include <AnalogButton.h>
+#include <RotEnc.h>
 
 #include <DTime.h>
 #include <LiquidCrystal.h>
