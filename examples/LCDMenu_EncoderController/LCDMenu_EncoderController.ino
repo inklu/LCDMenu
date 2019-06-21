@@ -1,4 +1,4 @@
-#include "LCDMenuController2.h"
+#include <LCDMenuController.h>
 #include <DTime.h>
 
 //derive class to overload create method 
