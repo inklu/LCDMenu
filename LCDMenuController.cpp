@@ -1,4 +1,4 @@
-#include <LCDMenuController2.h>
+#include <LCDMenuController.h>
 
 String decimate(byte b) { return ((b < 10) ? "0" : "") + String(b); }
 
