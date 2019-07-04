@@ -15,6 +15,10 @@
 #define MC_CYCLE_MLS (500)
 #endif
 
+#ifndef MENU_POSTPONE_MLS
+#define MENU_POSTPONE_MLS (3000)
+#endif
+
 #ifndef MC_INACT_TIMEOUT
 #define MC_INACT_TIMEOUT (30000)
 #endif
@@ -174,7 +178,7 @@ class MenuController::Menu {
     //Type of pointer to void function for calling from menu
     typedef void (*pFunc)();
     //Menu line types: node, integer, float, list, time, date, string, IP, void function...
-    enum menuLineType {mtNONE, mtNode, mtInt, mtFloat, mtList, mtTime, mtDate, mtString, mtIP, mtURL, mtFunc};
+    enum menuLineType {mtNONE, mtNode, mtInt, mtFloat, mtList, mtTime, mtDate, mtString, mtFunc, mtIP, mtURL};
     //default constructor
     Menu(){ }
     //class declaration of menu line
@@ -270,7 +274,7 @@ class MenuController::Menu {
         void editVal(){ editTime.setTime(time->hour,time->minute,0); }
         void saveVal(){ time->setTime(editTime.hour,editTime.minute,0); }
     };
-	//Date value of leaf class definition (DTime)
+    //Date value of leaf class definition (DTime)
     class MenuLine::MenuLeaf::MenuLeaf_date: public MenuLine::MenuLeaf {
         DTime *date, //current value
               editDate; //editing value
@@ -288,6 +292,7 @@ class MenuController::Menu {
         void editVal(){ editDate.setDate(date->year,date->month,date->day); }
         void saveVal(){ date->setDate(editDate.year,editDate.month,editDate.day); }
     };
+    //Calls Function from the leaf
     class MenuLine::MenuLeaf::MenuLeaf_func: public MenuLine::MenuLeaf {
       public:
         pFunc func;
@@ -295,7 +300,20 @@ class MenuController::Menu {
         MenuLeaf_func(const pFunc &_f):func(_f){ mlType = mtFunc; }
         setValue(const pFunc &_f){ func = _f; }
     };
-
+    //String value leaf
+    class MenuLine::MenuLeaf::MenuLeaf_str: public MenuLine::MenuLeaf {
+        String *str; //current value
+        char editStr[15]; //editing value
+      public:
+        MenuLeaf_str(){ partsCnt = 15; parts = new byte [partsCnt]; for(byte i = 0;i<partsCnt;i++) parts[i]=i; }
+        String getValue(){ return (String)editStr; }
+        MenuLeaf_str operator=(String _str); //set the value
+        void setValue(String *s); //set the date through the pointer of the global variable 
+        void nextVal();//{ if((byte)(++editStr.c_str()[part])<32) editStr.c_str()[part] = 32; }
+        void prevVal();//{ if((byte)(--editStr.c_str()[part])<32) editStr.c_str()[part] = 255; }
+        void editVal(){ strcpy(editStr,str->c_str()); }
+        void saveVal(){ *str = (String)editStr; }
+    };
     ////events receiver from controller
     void onAction(const mcPos _mcp,const mcEvent _mce,const MenuController &_mc);
 
@@ -322,6 +340,7 @@ class MenuController::Menu {
 
   private:
     unsigned long mls;     //time - millis()
+    unsigned long mlsPostpone; //wait time before enable\disable menu
     unsigned long mlsInactionStart;
     bool activeMenu=false; //menu activity indicator
     bool editMode=false; //menu editing mode

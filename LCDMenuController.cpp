@@ -26,10 +26,7 @@ Serial.println(_mce);
 #endif
   switch(menu->isActive()){
     case false: 
-      if(_mcp == mcpOK && _mce == mceHold) {
-        cycle = mls + MC_CYCLE_MLS * 3; //postpone of sending the controller event to menu handler
-        menu->enable(); //enable menu by hold OK button
-      }
+      if(_mcp == mcpOK && _mce == mceHold) menu->enable(); //enable menu by holding OK button
       break;
     case true:
       menu->onAction(_mcp,_mce,*this); //send the action for processing in case of active menu only
@@ -387,6 +384,27 @@ String MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_date::getValue(DTime &
   return sdt;
 }
 
+MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_str MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_str::operator=(String _str){
+  *str = _str;
+  return *this;
+}
+
+void MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_str::setValue(String *s){
+  str = s;
+}
+
+void MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_str::nextVal(){
+  byte ch = editStr[part];
+  if(++ch<32) ch = 32;
+  editStr[part]=ch;
+}
+
+void MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_str::prevVal(){
+  byte ch = editStr[part];
+  if(--ch<32) ch = 255;
+  editStr[part]=ch;
+}
+
 MenuController::Menu::MenuLine* MenuController::Menu::newMenuLine(menuLineType mlt){
   MenuLine *ml;
   switch(mlt){
@@ -407,6 +425,9 @@ MenuController::Menu::MenuLine* MenuController::Menu::newMenuLine(menuLineType m
       break;
     case mtFunc:
       ml = new MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_func;
+      break;
+    case mtString:
+      ml = new MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_str;
       break;
   }
   return ml;
@@ -488,14 +509,20 @@ void MenuController::Menu::edit() {
 }
 
 void MenuController::Menu::enable() {
-  activeMenu = true;
-  mlsInactionStart = mls;
-  show();
+  if((mls - mlsPostpone) >= MENU_POSTPONE_MLS){
+    activeMenu = true;
+    mlsInactionStart = mls;
+    show();
+  }
+  mlsPostpone = mls;
 }	
 
 void MenuController::Menu::disable() {
-  activeMenu = false;
-  lcd->clear();
+  if((mls - mlsPostpone) >= MENU_POSTPONE_MLS){
+    activeMenu = false;
+    lcd->clear();
+  }
+  mlsPostpone = mls;
 }	
 
 void MenuController::Menu::moveUP(){
