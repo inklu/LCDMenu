@@ -285,8 +285,66 @@ void MenuController::Menu::onAction(const mcPos _mcp, const mcEvent _mce, const 
       break;
   }
 }
+/*
+void MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_int::setValue(int _val=0, int _minVal=-32768, int _maxVal=32767, int _step=1){ 
+  if(value==nullptr) value = new int;
+  *value = _val; 
+  minVal = _minVal; 
+  maxVal = _maxVal; 
+  step = _step;
+} //set the value
+*/
+template <class nType>
+static nType MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_num<nType>::editValue;
 
-void MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_list::setValue(String _vals[],byte _size){
+template <class nType>
+String MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_num<nType>::getValue(){
+  char ch[15]; 
+  dtostrf(editValue,10,decp,ch); 
+  //return String("10");
+  String str = String(ch);
+  str.trim(); 
+  return str;
+}
+
+template <class nType>
+void MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_num<nType>::setValue(byte _dp=0, nType _step=1, nType _minVal=-128, nType _maxVal=127, nType *_val=nullptr){
+          //mlType = mtNum;
+          value = _val; 
+          minVal = _minVal; 
+          maxVal = _maxVal; 
+          step = _step; 
+          decp = _dp; 
+}
+
+template <class nType>
+void MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_num<nType>::nextVal(){
+  if((editValue+step)<=maxVal) editValue+=step;
+}
+
+template <class nType>
+void MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_num<nType>::prevVal(){
+  if((editValue-step)>=minVal) editValue-=step; 
+}
+
+template <class nType>
+void MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_num<nType>::editVal(){
+  editValue = *value; 
+}
+
+template <class nType>
+void MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_num<nType>::saveVal(){
+  *value = editValue; 
+}
+
+template class MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_num<int8_t>;
+template class MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_num<float>;
+
+static byte MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_list::editIdx=0;
+
+void MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_list::setValue(String _vals[],byte _size,byte *_idx=nullptr){
+  if(_idx==nullptr) { idx = new byte; idx = 0; }
+  else idx = _idx;
   size = _size;
   if (values) { delete[] values; }
   values = new String [size];
@@ -294,6 +352,24 @@ void MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_list::setValue(String _v
 	  values[i]=_vals[i];
   }
 }
+///*
+MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_bool::MenuLeaf_bool(){
+  mlType = mtBool; 
+  size = 2;
+  values = new String [size];
+  MenuLeaf_list::idx = new byte;
+  *MenuLeaf_list::idx = 0;
+}
+
+void MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_bool::setValue(String falseVal=LCD_TXT_FALSE,String trueVal=LCD_TXT_TRUE, bool *_idx=nullptr){
+  values[0] = falseVal;
+  values[1] = trueVal;
+  if(_idx==nullptr) { idx = new bool; idx = false; }
+  else idx = _idx;
+}
+//*/
+
+static DTime *MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_time::editTime;
 
 void MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_time::nextVal(DTime &_tm){
   byte h = _tm.hour;
@@ -338,6 +414,19 @@ String MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_time::getValue(DTime &
   stm.replace("SS",decimate(_tm.second));
   return stm;
 }
+
+void MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_time::editVal(){
+  if(editTime==nullptr) editTime = new DTime;
+  editTime->setTime(time->hour,time->minute,0); 
+}
+
+void MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_time::saveVal(){
+  time->setTime(editTime->hour,editTime->minute,0); 
+  delete editTime;
+  editTime = nullptr;
+}
+
+static DTime *MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_date::editDate;
 
 void MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_date::nextVal(DTime &_dt){
   uint16_t y = _dt.year;
@@ -384,11 +473,26 @@ String MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_date::getValue(DTime &
   return sdt;
 }
 
+void MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_date::editVal(){
+  if(editDate==nullptr) editDate = new DTime;
+  editDate->setDate(date->year,date->month,date->day); 
+}
+
+void MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_date::saveVal(){
+  date->setDate(editDate->year,editDate->month,editDate->day); 
+  delete editDate;
+  editDate = nullptr;
+}
+
+static char *MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_str::editStr;
+
+/*
 MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_str MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_str::operator=(String _str){
+  if(str==nullptr) str = new String;
   *str = _str;
   return *this;
 }
-
+*/
 void MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_str::setValue(String *s){
   str = s;
 }
@@ -405,6 +509,17 @@ void MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_str::prevVal(){
   editStr[part]=ch;
 }
 
+void MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_str::editVal(){
+  if(editStr==nullptr) editStr = new char[15];
+  strcpy(editStr,str->c_str()); 
+}
+
+void MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_str::saveVal(){
+  *str = String(editStr); 
+  delete [] editStr;
+  editStr = nullptr;
+}
+/*
 MenuController::Menu::MenuLine* MenuController::Menu::newMenuLine(menuLineType mlt){
   MenuLine *ml;
   switch(mlt){
@@ -412,7 +527,11 @@ MenuController::Menu::MenuLine* MenuController::Menu::newMenuLine(menuLineType m
       ml = new MenuController::Menu::MenuLine::MenuNode;
       break;
     case mtInt:
-      ml = new MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_int;
+      //ml = new MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_int;
+      ml = new MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_dig<int>;
+      break;
+    case mtFloat:
+      ml = new MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_dig<float>;
       break;
     case mtList:
       ml = new MenuController::Menu::MenuLine::MenuLeaf::MenuLeaf_list;
@@ -432,6 +551,7 @@ MenuController::Menu::MenuLine* MenuController::Menu::newMenuLine(menuLineType m
   }
   return ml;
 }
+*/
 
 const LiquidCrystal& MenuController::Menu::newDisplay(const byte rsPin, const byte enPin, const byte d4Pin, const byte d5Pin, const byte d6Pin, const byte d7Pin, const byte _cols=16,const byte _rows=2){
 
@@ -449,6 +569,7 @@ void MenuController::Menu::show(){
 
   editMode = false;
   lcd->noCursor();
+  lcd->display();
 
   //adjust menu to lcd size
   if(!lcd_active_row && pActiveLine->pNextLine==nullptr && pActiveLine->pPreviousLine!=nullptr){
@@ -503,6 +624,7 @@ void MenuController::Menu::edit() {
   lcd->print(LCD_ACTIVE_LINE);
 
   //value with the cursor on the editing part
+  //lcd->print(pActiveLine->getValue().c_str());
   lcd->print(pActiveLine->getValue());
   lcd->setCursor(((MenuController::Menu::MenuLine::MenuLeaf *) pActiveLine)->getShift() + 1,1);
   lcd->cursor();
