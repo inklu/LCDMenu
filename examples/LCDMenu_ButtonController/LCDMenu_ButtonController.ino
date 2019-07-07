@@ -8,6 +8,13 @@ class MyMenu:public MenuController::Menu {
     void create();
 };
 
+//global variables binded to menu
+int8_t in=10;  //integer
+float fl=20.32; //float
+String st="Hello!"; //string
+bool bl=false; //bool value
+byte ls=0; //list index
+
 //declare calling function from menu
 void f1();
 
@@ -17,60 +24,64 @@ uint64_t cycle;
 
 //create menu
 void MyMenu::create() {
-  MenuLine::MenuLeaf::MenuLeaf_int *mli;   //integer value
+  MenuLine::MenuLeaf::MenuLeaf_num<int8_t> *mli;   //integer value
+  MenuLine::MenuLeaf::MenuLeaf_num<float> *mlfl;   //float
+  MenuLine::MenuLeaf::MenuLeaf_str *mls; //string
   MenuLine::MenuLeaf::MenuLeaf_list *mlst; //list
   MenuLine::MenuLeaf::MenuLeaf_time *mlt;  //time
   MenuLine::MenuLeaf::MenuLeaf_date *mld;  //date
   MenuLine::MenuLeaf::MenuLeaf_func *mlf;  //function
-  MenuLine::MenuNode *mn;
+  MenuLine::MenuNode *mn; //node
   
-  pFirstLine = mli = newMenuLine(mtInt); //first line is an integer value leaf 
-  mli->name = "Integer1";                //line name
-  //mli->value = 10;            
-  *mli = 10;               //set value, step=1
+  pFirstLine = mli = new MenuLine::MenuLeaf::MenuLeaf_num<int8_t>; //first line is an integer value leaf 
+  mli->name = "Integer1"; //line name
+  mli->setValue(0,2,-20,50,&in);  //set value: decimal point=0, step=2, min val=-20, max val=50, pointer to "in" variable
 
-  mn = newMenuLine(mtNode);              //create node
+  mn = new MenuLine::MenuNode;  //create node
   mn->name = "Node1";            //node name
   pFirstLine->pNextLine = mn;      //node follows first line
   mn->pPreviousLine = pFirstLine;    //predecessor is first line
 
-  mlst = newMenuLine(mtList);         //create leaf of list value
-  mlst->name = "List2";             //leaf name
+  mlst = new MenuLine::MenuLeaf::MenuLeaf_list;   //create leaf of list value
+  mlst->name = "List2";     //leaf name
   String lst[]={"Hello","World","I love you!"}; //values of leaf
-  mlst->setValue(lst,3);            //set values
+  mlst->setValue(lst,3,&ls);   //set values: list of values, size=3, pointer to "byte ls" variable which represent the index of the selected value
   mn->pNextLine = mlst;             //follows node
   mlst->pPreviousLine = mn;           //predecessor is node
   
-  mli = newMenuLine(mtInt);       //create another integer value leaf
-  mli->name = "Integer3";       //leaf name
-  //mli->value = 30;
-  *mli = 30;              //value
-  //mli->step = 3;
-  //mli->setStep(3);            //step
-  mn->pNextLine->pNextLine = mli;   //follows the list
-  mli->pPreviousLine = mn->pNextLine; //predecessor is list
+  mlfl = new MenuLine::MenuLeaf::MenuLeaf_num<float>;       //create float value leaf
+  mlfl->name = "Float3";       //leaf name
+  mlfl->setValue(2,0.25,-30.5,20.75,&fl);  //set value: decimal point=2, step=0.25, min val=-30.5, max val=20.75, pointer to "fl" variable
+  mn->pNextLine->pNextLine = mlfl;   //follows the list
+  mlfl->pPreviousLine = mn->pNextLine; //predecessor is list
 
-  mlt = newMenuLine(mtTime);  //create leaf of time
+  mlt = new MenuLine::MenuLeaf::MenuLeaf_time;  //create leaf of time
   mlt->name = "Time";     //leaf name
   mlt->setValue(&dtime);    //set value as a pointer to global variable
   mn->pFirstChild = mlt;    //the first line of the node
   mlt->pParentLine = mn;    //parent is node
   
-  mld = newMenuLine(mtDate);      //create leaf of date
+  mld = new MenuLine::MenuLeaf::MenuLeaf_date;      //create leaf of date
   mld->name = "Date";         //leaf name
   mld->setValue(&dtime);        //set value as a pointer to global variable
   mld->pParentLine = mn;        //parent is node
   mn->pFirstChild->pNextLine = mld;   //follows the time line
   mld->pPreviousLine = mn->pFirstChild; //predecessor - time line
 
-  mlf = newMenuLine(mtFunc);      //create leaf with function
+  mlf = new MenuLine::MenuLeaf::MenuLeaf_func;      //create leaf with function
   mlf->name = "Func1";         //leaf name
-  mlf->setValue(f1);        //value as a ponter to function
+  mlf->setValue(f1);        //value as a ponter to function "void f1()"
   mlf->pParentLine = mn;        //parent is node
   mld->pNextLine = mlf;   //follows the date leaf
   mlf->pPreviousLine = mld; //predecessor is the date leaf
 
-  pActiveLine = pFirstLine;  //active line is the first line
+  mls = new MenuLine::MenuLeaf::MenuLeaf_str;  //create leaf with string
+  mls->name = "String5";
+  mls->setValue(&st); //reference to global string "st"
+  mlfl->pNextLine = mls;   //str follows the float
+  mls->pPreviousLine = mlfl; //str predecessor is float
+  
+  pActiveLine = pFirstLine; //active line is the first line
 }
 
 MyMenu m; //declares menu object
