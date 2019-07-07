@@ -1,15 +1,25 @@
 #ifndef LCDMENUCONTROLLER_H
 #define LCDMENUCONTROLLER_H
 
+/*
 #ifndef DEBUG
 #define DEBUG
 #endif
+*/
 
 #if ARDUINO >= 100
   #include <Arduino.h>
 #else
   #include <WProgram.h>
 #endif
+
+#include <AnalogJoystick.h>
+#include <DigitalButton.h>
+#include <AnalogButton.h>
+#include <RotEnc.h>
+
+#include <DTime.h>
+#include <LiquidCrystal.h>
 
 #ifndef MC_CYCLE_MLS
 #define MC_CYCLE_MLS (500)
@@ -31,13 +41,29 @@
 #define LCD_ACTIVE_LINE ">"
 #endif
 
-#include <AnalogJoystick.h>
-#include <DigitalButton.h>
-#include <AnalogButton.h>
-#include <RotEnc.h>
+#ifndef LCD_TXT_FALSE
+#define LCD_TXT_FALSE "False"
+#endif
 
-#include <DTime.h>
-#include <LiquidCrystal.h>
+#ifndef LCD_TXT_TRUE
+#define LCD_TXT_TRUE "True"
+#endif
+
+#ifndef LCD_TXT_NO
+#define LCD_TXT_NO "No"
+#endif
+
+#ifndef LCD_TXT_YES
+#define LCD_TXT_YES "Yes"
+#endif
+
+#ifndef LCD_TXT_OFF
+#define LCD_TXT_OFF "Off"
+#endif
+
+#ifndef LCD_TXT_ON
+#define LCD_TXT_ON "On"
+#endif
 
 //adding 0 to hours,minutes,seconds,days & month
 String decimate(byte b); //{ return ((b < 10) ? "0" : "") + String(b); }
@@ -178,7 +204,7 @@ class MenuController::Menu {
     //Type of pointer to void function for calling from menu
     typedef void (*pFunc)();
     //Menu line types: node, integer, float, list, time, date, string, IP, void function...
-    enum menuLineType {mtNONE, mtNode, mtInt, mtFloat, mtList, mtTime, mtDate, mtString, mtFunc, mtIP, mtURL};
+    enum menuLineType {mtNONE, mtNode, mtNum, mtList, mtTime, mtDate, mtString, mtFunc, mtBool }; // mtInt, mtIP, mtURL
     //default constructor
     Menu(){ }
     //class declaration of menu line
@@ -207,12 +233,15 @@ class MenuController::Menu {
       protected:
 	byte *parts, partsCnt=0, part=0;  //shifts of the value parts
       public:
-        class MenuLeaf_int;		//Integer value leaf class declaration
+        //class MenuLeaf_int;		//DEPRECATED! num should be used instead
         class MenuLeaf_list;		//List value leaf class declaration
         class MenuLeaf_time;		//Time value leaf class declaration
         class MenuLeaf_date;		//Date value leaf class declaration
         class MenuLeaf_func;		//Function value leaf class declaration
         class MenuLeaf_str;		//String value leaf class declaration
+        class MenuLeaf_bool;		//Boolean value leaf class declaration
+        template <class nType>
+          class MenuLeaf_num;		//Numeric values leaf class declaration
         virtual String getValue(){}
         //virtual setValue(String _s) { }
         virtual void editVal(){} //edit value
@@ -222,75 +251,130 @@ class MenuController::Menu {
 	virtual void nextPart(){ if(partsCnt) if(++part==partsCnt) part=0; }  //shift to next part of editing value
 	virtual int getShift(){ return (partsCnt ? parts[part] : 0); } //get the current shift of the leaf value part
     };
+/*
     //Integer value of leaf class definition
     class MenuLine::MenuLeaf::MenuLeaf_int: public MenuLine::MenuLeaf {
-        int value,     //current value
+        int *value=nullptr,     //current value
             editValue, //editing value
             minVal,    //minimum value
             maxVal,    //maximum value
             step;      //change step
         //void edit();
       public:
-        MenuLeaf_int(int _val=0, int _minVal=-32768, int _maxVal=32767, int _step=1) { mlType = mtInt; value = _val; minVal = _minVal; maxVal = _maxVal; step = _step; };
-        String getValue() { //String s; s = value; return s; 
-			return (String) editValue; }
-        MenuLeaf_int operator=(int _val){ value = _val; return *this; } //set the value
-        void setValue(int _val=0, int _minVal=-32768, int _maxVal=32767, int _step=1){ value = _val; minVal = _minVal; maxVal = _maxVal; step = _step; } //set the value
+        MenuLeaf_int(){ mlType = mtInt; }
+        MenuLeaf_int(int _val, int _minVal=-32768, int _maxVal=32767, int _step=1) { 
+          mlType = mtInt;
+          if(value==nullptr) value = new int;
+          *value = _val; 
+          minVal = _minVal; 
+          maxVal = _maxVal; 
+          step = _step;
+        }
+        String getValue() { return String(editValue); }
+        MenuLeaf_int operator=(int _val){ *value = _val; return *this; } //set the value
+        void setValue(int _val=0, int _minVal=-32768, int _maxVal=32767, int _step=1); //{ value = _val; minVal = _minVal; maxVal = _maxVal; step = _step; } //set the value
+        void setValue(int *_val){ value = _val; } //set the value through the pointer
         void nextVal(){ if((editValue+step)<=maxVal) editValue+=step; }
         void prevVal(){ if((editValue-step)>=minVal) editValue-=step; }
-        void editVal(){ editValue = value; }
-        void saveVal(){ value = editValue; }
+        void editVal(){ editValue = *value; }
+        void saveVal(){ *value = editValue; }
+    };
+*/
+    //Numeric values of leaf class definition
+    template <class nType>
+    class MenuLine::MenuLeaf::MenuLeaf_num: public MenuLine::MenuLeaf {
+        static nType editValue; //editing value
+        nType *value=nullptr,     //current value
+            minVal,    //minimum value
+            maxVal,    //maximum value
+            step;      //change step
+        byte decp=0;     //decimal places
+/*
+        void init(const byte _dp=0, const float _step=1.0, const float _minVal=-32768.0, const float _maxVal=32767.0, float *_val=nullptr) { 
+          mlType = mtNum;
+          value = _val; 
+          minVal = _minVal; 
+          maxVal = _maxVal; 
+          step = _step; 
+          decp = _dp; 
+        }
+*/
+      public:
+        MenuLeaf_num(){ mlType = mtNum; }
+        /*
+        MenuLeaf_num(const byte _dp=0, const float _step=1.0, const float _minVal=-32768.0, const float _maxVal=32767.0, float *_val=nullptr) { 
+          init(_dp,_step,_minVal,_maxVal,_val);
+        }
+        */
+        String getValue(); // { char ch[15]; dtostrf(editValue,10,decp,ch); return String("10");}//String str = String(ch); str.trim(); return str;}
+        void setValue(byte _dp=0, nType _step=1, nType _minVal=-128, nType _maxVal=127, nType *_val=nullptr);
+        void nextVal();
+        void prevVal();
+        void editVal();
+        void saveVal();
     };
     //List value of leaf class definition
     class MenuLine::MenuLeaf::MenuLeaf_list: public MenuLine::MenuLeaf {
-        String *values=nullptr; //values array
-        byte idx=0,             //index of current value
-             editIdx=0;         //index of editing value
+        static byte editIdx;         //index of editing value
+      protected:
+        byte *idx;             //index of current value as pointer to global variable
+        String *values=nullptr; //array of values 
         byte size;		//array size
       public:
-        MenuLeaf_list(){};
+        MenuLeaf_list(){ mlType = mtList; };
         String getValue() { return values[editIdx];}
-        void setValue(String _vals[], byte _size); //set the array of values
+        void setValue(String _vals[], byte _size,byte *_idx=nullptr); //set the array of values
         void nextVal(){++editIdx==size?editIdx=0:editIdx;}
         void prevVal(){editIdx==0?editIdx=size-1:editIdx--;}
-        void editVal(){ editIdx = idx; }
-        void saveVal(){ idx = editIdx; }
+        void editVal(){ editIdx = *idx; }
+        void saveVal(){ *idx = editIdx; }
     };
+///*
+    //Boolean value of leaf class definition
+    class MenuLine::MenuLeaf::MenuLeaf_bool: public MenuLine::MenuLeaf::MenuLeaf_list {
+        bool *idx;
+      public:
+        MenuLeaf_bool();
+        void setValue(String falseVal, String trueVal, bool *_idx=nullptr); //set the false&true values text
+        void editVal(){ *MenuLeaf_list::idx = *idx; MenuLeaf_list::editVal(); }
+        void saveVal(){ MenuLeaf_list::saveVal(); *idx = (bool)(*MenuLeaf_list::idx); }
+    };
+//*/
     //Time value of leaf class definition (DTime)
     class MenuLine::MenuLeaf::MenuLeaf_time: public MenuLine::MenuLeaf {
-        DTime *time,    //current value
-              editTime; //editing value
+        static DTime *editTime; //editing value
+        DTime *time;    //current value
         String format = "HH:MM"; //format of time
         void nextVal(DTime &_tm);
         void prevVal(DTime &_tm);
         String getValue(DTime &_tm);
       public:
-        MenuLeaf_time(){ partsCnt = 2; parts = new byte [partsCnt]; parts[0]=0; parts[1]=3;}// parts[2]=6;}
-        String getValue(){ return getValue(editTime); }// { return decimate(time->hour) + ":" + decimate(time->minute) + ":" + decimate(time->second); }
+        MenuLeaf_time(){ mlType = mtTime; partsCnt = 2; parts = new byte [partsCnt]; parts[0]=0; parts[1]=3;}// parts[2]=6;}
+        String getValue(){ return getValue(*editTime); }// { return decimate(time->hour) + ":" + decimate(time->minute) + ":" + decimate(time->second); }
         void setValue(DTime *_tm){ time = _tm;} //set the time through the pointer of the global variable 
-        void setValue(byte _h,byte _m,byte _s){ if(time) delete time; time = new DTime; time->setTime(_h,_m,_s);} //set new value
-        void nextVal(){ nextVal(editTime); }
-        void prevVal(){ prevVal(editTime); }
-        void editVal(){ editTime.setTime(time->hour,time->minute,0); }
-        void saveVal(){ time->setTime(editTime.hour,editTime.minute,0); }
+        //void setValue(byte _h,byte _m,byte _s){ if(time==nullptr) time = new DTime; time->setTime(_h,_m,_s);} //set new value
+        void nextVal(){ nextVal(*editTime); }
+        void prevVal(){ prevVal(*editTime); }
+        void editVal();
+        void saveVal();
     };
     //Date value of leaf class definition (DTime)
     class MenuLine::MenuLeaf::MenuLeaf_date: public MenuLine::MenuLeaf {
-        DTime *date, //current value
-              editDate; //editing value
+        static DTime *editDate; //editing value
+        DTime *date; //current value
         String format = "YYYY-MM-DD"; //format of date
         void nextVal(DTime &_dt);
         void prevVal(DTime &_dt);
         String getValue(DTime &_dt);
       public:
-        MenuLeaf_date(){ partsCnt = 3; parts = new byte [partsCnt]; parts[0]=0; parts[1]=5; parts[2]=8;}
-        String getValue(){ return getValue(editDate); }// { return (String) date->year + "-" + decimate(date->month) + "-" + decimate(date->day); }
+        MenuLeaf_date(){ mlType = mtDate; partsCnt = 3; parts = new byte [partsCnt]; parts[0]=0; parts[1]=5; parts[2]=8;}
+        String getValue(){ return getValue(*editDate); }// { return (String) date->year + "-" + decimate(date->month) + "-" + decimate(date->day); }
         void setValue(DTime *_dt){ date = _dt;} //set the date through the pointer of the global variable 
-        void setValue(uint16_t _y,uint8_t _m,uint8_t _d){ if(date) delete date; date = new DTime; date->setDate(_y,_m,_d);} //set new date
-        void nextVal(){ nextVal(editDate); }
-        void prevVal(){ prevVal(editDate); }
-        void editVal(){ editDate.setDate(date->year,date->month,date->day); }
-        void saveVal(){ date->setDate(editDate.year,editDate.month,editDate.day); }
+        //void setValue(uint16_t _y,uint8_t _m,uint8_t _d){ if(date==nullptr) date = new DTime; date->setDate(_y,_m,_d);} //set new date
+        void nextVal(){ nextVal(*editDate); }
+        void prevVal(){ prevVal(*editDate); }
+        void editVal();
+        void saveVal();
     };
     //Calls Function from the leaf
     class MenuLine::MenuLeaf::MenuLeaf_func: public MenuLine::MenuLeaf {
@@ -302,18 +386,19 @@ class MenuController::Menu {
     };
     //String value leaf
     class MenuLine::MenuLeaf::MenuLeaf_str: public MenuLine::MenuLeaf {
-        String *str; //current value
-        char editStr[15]; //editing value
+        static char *editStr; //editing value
+        String *str=nullptr; //current value
       public:
         MenuLeaf_str(){ partsCnt = 15; parts = new byte [partsCnt]; for(byte i = 0;i<partsCnt;i++) parts[i]=i; }
-        String getValue(){ return (String)editStr; }
-        MenuLeaf_str operator=(String _str); //set the value
-        void setValue(String *s); //set the date through the pointer of the global variable 
+        String getValue(){ return String(editStr); }
+        //MenuLeaf_str operator=(String _str); //set the value
+        void setValue(String *s); //set the string through the pointer of the global variable 
         void nextVal();//{ if((byte)(++editStr.c_str()[part])<32) editStr.c_str()[part] = 32; }
         void prevVal();//{ if((byte)(--editStr.c_str()[part])<32) editStr.c_str()[part] = 255; }
-        void editVal(){ strcpy(editStr,str->c_str()); }
-        void saveVal(){ *str = (String)editStr; }
+        void editVal();
+        void saveVal();
     };
+
     ////events receiver from controller
     void onAction(const mcPos _mcp,const mcEvent _mce,const MenuController &_mc);
 
@@ -349,7 +434,7 @@ class MenuController::Menu {
     byte lcd_last_col;   //lcd last column
     byte lcd_active_row=0;//lcd active line
     LiquidCrystal *lcd=nullptr;//pointer to lcd
-
+    
     ////internal manipulations
     void moveUP();   //menu up
     void moveDOWN(); //menu down
