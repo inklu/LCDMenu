@@ -27,6 +27,7 @@ Serial.println(_mce);
   switch(menu->isActive()){
     case false: 
       if(_mcp == mcpOK && _mce == mceHold) menu->enable(); //enable menu by holding OK button
+      else outAction(_mcp,_mce); //send controller action outside when menu is disabled
       break;
     case true:
       menu->onAction(_mcp,_mce,*this); //send the action for processing in case of active menu only

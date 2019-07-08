@@ -86,9 +86,10 @@ class MenuController{
     void bindMenu(const MenuController::Menu &_m){ menu = &_m; }
     void run(unsigned long _mls=0);
   protected:
-    void menuAction(const mcPos _mcp, const mcEvent _mce);//menu->UP(_mce,this); }
+    void menuAction(const mcPos _mcp, const mcEvent _mce);
     virtual void runEachMls(unsigned long _mls){}
     virtual void runEachCycle(unsigned long _mls){}
+    virtual void outAction(const mcPos _mcp, const mcEvent _mce){} //override method to use controller for other purposes
   private:
     unsigned long mls;
     unsigned long cycle;
